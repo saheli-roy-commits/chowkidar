@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chowkidar — Scam Message Detector</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F2EFE4;
+    --paper-dark: #E8E3D3;
+    --ink: #1E2A4A;
+    --ink-soft: #3F4A66;
+    --stamp-red: #B8433C;
+    --stamp-green: #3D6B4F;
+    --gold: #A9825C;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    background-image: radial-gradient(var(--paper-dark) 1px, transparent 1px);
+    background-size: 22px 22px;
+    color: var(--ink);
+    font-family: 'Space Mono', monospace;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+    line-height: 1.5;
+  }
+  header {
+    text-align: center;
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 20px;
+    margin-bottom: 32px;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(1.8rem, 6vw, 2.4rem);
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 1rem;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+  }
+  .tagline {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    max-width: 460px;
+    margin: 0 auto;
+  }
+  .lede {
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+  textarea {
+    width: 100%;
+    min-height: 110px;
+    padding: 16px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    border: 2px solid var(--ink);
+    background: #fff;
+    color: var(--ink);
+    border-radius: 2px;
+    resize: vertical;
+  }
+  textarea:focus { outline: 3px solid var(--gold); outline-offset: 1px; }
+  button {
+    margin-top: 14px;
+    padding: 12px 28px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    border-radius: 2px;
+    width: 100%;
+    max-width: 240px;
+  }
+  button:hover { background: var(--ink-soft); }
+
+  .loading { display: flex; align-items: center; gap: 8px; color: var(--ink-soft); font-size: 0.85rem; padding: 10px 0; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: pulse 1s infinite ease-in-out; }
+  .dot:nth-child(2) { animation-delay: 0.15s; }
+  .dot:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes pulse { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+
+  .error-box {
+    background: #fff;
+    border: 1px dashed var(--stamp-red);
+    color: var(--stamp-red);
+    padding: 14px 16px;
+    font-size: 0.85rem;
+    border-radius: 2px;
+  }
+
+  .result-wrap { position: relative; margin-top: 28px; }
+  .result {
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--paper-dark);
+    box-shadow: 0 2px 0 var(--paper-dark);
+    padding: 22px 20px 18px;
+    overflow: hidden;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  .result-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+  .lang-badge {
+    font-size: 0.68rem;
+    color: var(--ink-soft);
+    border: 1px solid var(--paper-dark);
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--paper);
+    white-space: nowrap;
+  }
+
+  .stamp {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(1rem, 5vw, 1.3rem);
+    letter-spacing: 0.06em;
+    padding: 5px 12px;
+    border: 3px solid;
+    border-radius: 4px;
+    transform: rotate(-6deg) scale(0.6);
+    opacity: 0;
+    animation: stampIn 0.35s cubic-bezier(.2,1.4,.5,1) 0.15s forwards;
+    flex-shrink: 0;
+  }
+  @keyframes stampIn { to { transform: rotate(-6deg) scale(1); opacity: 0.9; } }
+  .stamp.scam { color: var(--stamp-red); border-color: var(--stamp-red); }
+  .stamp.safe { color: var(--stamp-green); border-color: var(--stamp-green); }
+
+  .confidence { font-size: 0.75rem; color: var(--ink-soft); text-transform: lowercase; margin: 10px 0; }
+  .explanation { font-family: 'Fraunces', serif; font-size: 1rem; line-height: 1.6; margin: 0 0 14px; }
+  .flags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .flag { font-size: 0.7rem; border: 1px solid var(--ink); padding: 3px 9px; border-radius: 20px; color: var(--ink-soft); }
+  .policy-check { font-size: 0.78rem; color: var(--ink-soft); border-top: 1px dashed var(--paper-dark); padding-top: 12px; }
+  .policy-check strong { color: var(--ink); }
+  .dup-note { font-size: 0.78rem; color: var(--gold); margin: 8px 0; }
+  .risk-meter { margin: 14px 0; }
+  .risk-meter-label { font-size: 0.72rem; color: var(--ink-soft); margin-bottom: 4px; }
+  .risk-meter-track { height: 8px; background: var(--paper-dark); border-radius: 4px; overflow: hidden; }
+  .risk-meter-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+
+  #history { margin-top: 44px; }
+  #history h2 { font-family: 'Fraunces', serif; font-size: 1.05rem; border-bottom: 1px solid var(--paper-dark); padding-bottom: 8px; margin-bottom: 12px; }
+  .case { display: flex; align-items: baseline; gap: 8px; padding: 9px 0; border-bottom: 1px dashed var(--paper-dark); font-size: 0.8rem; flex-wrap: wrap; }
+  .case-verdict { font-weight: 700; flex-shrink: 0; width: 56px; }
+  .case-verdict.scam { color: var(--stamp-red); }
+  .case-verdict.safe { color: var(--stamp-green); }
+  .case-msg { color: var(--ink-soft); flex: 1; min-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .case-time { color: var(--gold); font-size: 0.7rem; flex-shrink: 0; }
+  .empty-note { color: var(--ink-soft); font-size: 0.85rem; }
+
+  @media (max-width: 420px) {
+    body { padding: 28px 14px 60px; }
+    .result { padding: 16px 14px 14px; }
+    button { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Chowkidar</h1>
+    <p class="subtitle">a watchman for your inbox</p>
+    <p class="tagline">Paste a suspicious message and get an independent, two-layer check — an AI reading plus a rule-based scan — in Hindi, Bengali, or English.</p>
+  </header>
+
+  <p class="lede">Paste the message below.</p>
+  <textarea id="messageInput" placeholder="Paste the message here..."></textarea><br>
+  <button onclick="analyzeMessage()">Check this message</button>
+
+  <div class="result-wrap" id="resultWrap"></div>
+
+  <div id="history">
+    <h2>Case file</h2>
+    <div id="historyList">Loading...</div>
+  </div>
+
+<script>
+  const API_BASE = "http://127.0.0.1:8000";
+
+  function detectLanguage(text) {
+    if (/[\u0980-\u09FF]/.test(text)) return "Bengali detected";
+    if (/[\u0900-\u097F]/.test(text)) return "Hindi detected";
+    if (/[a-zA-Z]/.test(text)) return "English detected";
+    return "Script unrecognized";
+  }
+
+  async function analyzeMessage() {
+    const message = document.getElementById("messageInput").value;
+    if (!message.trim()) return;
+    document.getElementById("resultWrap").innerHTML =
+      "<div class='loading'><span class='dot'></span><span class='dot'></span><span class='dot'></span> Checking the message...</div>";
+    try {
+      const res = await fetch(API_BASE + "/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: message })
+      });
+      if (!res.ok) throw new Error("bad response");
+      const data = await res.json();
+      renderResult(data, message);
+      loadHistory();
+    } catch (err) {
+      document.getElementById("resultWrap").innerHTML =
+        "<div class='error-box'>Could not reach the server. Make sure the backend is running, then try again.</div>";
+    }
+  }
+
+  function renderResult(data, originalMessage) {
+    const isScam = !!data.is_scam;
+    const stampClass = isScam ? "scam" : "safe";
+    const stampLabel = isScam ? "FLAGGED" : "CLEAR";
+    const lang = detectLanguage(originalMessage);
+    const flags = (data.red_flags || []).map(function(f) { return "<span class='flag'>" + f + "</span>"; }).join("");
+    const policyRisk = data.policy_risk || "unknown";
+    const policyRules = (data.policy_rules_triggered || []).join(", ") || "none";
+    const riskScore = data.risk_score !== undefined ? data.risk_score : 0;
+    const riskColor = riskScore >= 70 ? 'var(--stamp-red)' : (riskScore >= 40 ? 'var(--gold)' : 'var(--stamp-green)');
+    const dupCount = data.duplicate_count || 0;
+    const dupNote = dupCount > 0 ? "<div class='dup-note'>" + (dupCount === 1 ? 'Seen once before.' : 'Seen ' + dupCount + ' times before.') + "</div>" : "";
+
+    document.getElementById("resultWrap").innerHTML =
+      "<div class='result'>" +
+      "<div class='result-top'>" +
+      "<div class='stamp " + stampClass + "'>" + stampLabel + "</div>" +
+      "<span class='lang-badge'>" + lang + "</span>" +
+      "</div>" +
+      "<div class='confidence'>AI confidence: " + (data.confidence || "unknown") + "</div>" +
+      "<div class='risk-meter'>" +
+      "<div class='risk-meter-label'>Risk score: " + riskScore + "/100</div>" +
+      "<div class='risk-meter-track'><div class='risk-meter-fill' style='width:" + riskScore + "%;background:" + riskColor + ";'></div></div>" +
+      "</div>" +
+      dupNote +
+      "<p class='explanation'>" + (data.explanation || "") + "</p>" +
+      "<div class='flags'>" + flags + "</div>" +
+      "<div class='policy-check'>Independent rule check: <strong>" + policyRisk + " risk</strong> (" + policyRules + ")</div>" +
+      "</div>";
+  }
+
+  async function loadHistory() {
+    try {
+      const res = await fetch(API_BASE + "/history");
+      const data = await res.json();
+      if (!data.length) {
+        document.getElementById("historyList").innerHTML = "<p class='empty-note'>No cases filed yet. Check a message above to get started.</p>";
+        return;
+      }
+      document.getElementById("historyList").innerHTML = data.map(function(item) {
+        return "<div class='case'>" +
+          "<span class='case-verdict " + (item.is_scam ? 'scam' : 'safe') + "'>" + (item.is_scam ? 'FLAGGED' : 'CLEAR') + "</span>" +
+          "<span class='case-msg'>" + item.message + "</span>" +
+          "<span class='case-time'>" + new Date(item.created_at).toLocaleTimeString() + "</span>" +
+          "</div>";
+      }).join("");
+    } catch (err) {
+      document.getElementById("historyList").innerHTML = "<p class='empty-note'>Could not load history.</p>";
+    }
+  }
+
+  loadHistory();
+</script>
+</body>
+</html>

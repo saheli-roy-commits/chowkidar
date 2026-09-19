@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+scam_detector.db
+aws-sam-cli-linux-x86_64.zip
+sam-installation/
+.env

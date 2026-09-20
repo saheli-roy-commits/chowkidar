@@ -187,7 +187,10 @@
   <div class="result-wrap" id="resultWrap"></div>
 
   <div id="history">
-    <h2>Case file</h2>
+    <div style="display:flex; justify-content:space-between; align-items:baseline;">
+      <h2 style="border:none; padding:0; margin:0;">Case file</h2>
+      <button onclick="clearHistory()" style="background:none; color:var(--stamp-red); border:1px solid var(--stamp-red); font-family:'Space Mono', monospace; font-size:0.72rem; padding:5px 12px; margin:0;">Clear history</button>
+    </div>
     <div id="historyList">Loading...</div>
   </div>
 
@@ -270,6 +273,16 @@
       }).join("");
     } catch (err) {
       document.getElementById("historyList").innerHTML = "<p class='empty-note'>Could not load history.</p>";
+    }
+  }
+
+  async function clearHistory() {
+    if (!confirm("Clear all case history? This cannot be undone.")) return;
+    try {
+      await fetch(API_BASE + "/history", { method: "DELETE" });
+      loadHistory();
+    } catch (err) {
+      alert("Could not clear history.");
     }
   }
 

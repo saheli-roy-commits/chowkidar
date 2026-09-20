@@ -52,6 +52,12 @@ def analyze(request: MessageRequest, db: Session = Depends(get_db)):
 
     return result
 
+@app.delete("/history")
+def clear_history(db: Session = Depends(get_db)):
+    count = db.query(AnalysisRecord).delete()
+    db.commit()
+    return {"deleted": count}
+
 @app.get("/history")
 def get_history(db: Session = Depends(get_db)):
     records = db.query(AnalysisRecord).order_by(AnalysisRecord.created_at.desc()).limit(20).all()
